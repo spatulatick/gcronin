@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Global Chat</title>
+  <style>
+    body {
+      background: #0e0e10;
+      color: white;
+      font-family: Arial, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+    }
+    h1 { color: #ff3b3b; margin: 10px 0; }
+    #chat-box {
+      flex: 1;
+      width: 90%;
+      max-width: 700px;
+      background: #1a1a1d;
+      border-radius: 8px;
+      padding: 10px;
+      overflow-y: auto;
+      box-shadow: 0 0 10px #000;
+    }
+    .msg { margin: 5px 0; }
+    .username { color: #ff3b3b; font-weight: bold; }
+    #input-area {
+      display: flex;
+      width: 90%;
+      max-width: 700px;
+      margin-bottom: 10px;
+    }
+    #msg {
+      flex: 1;
+      padding: 10px;
+      border: none;
+      border-radius: 6px 0 0 6px;
+      outline: none;
+      font-size: 16px;
+    }
+    #send {
+      background: #ff3b3b;
+      border: none;
+      color: white;
+      font-size: 16px;
+      padding: 10px 20px;
+      border-radius: 0 6px 6px 0;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <h1>🌐 Global Chat</h1>
+  <div id="chat-box"></div>
+  <div id="input-area">
+    <input id="msg" placeholder="Type your message..." />
+    <button id="send">Send</button>
+  </div>
+
+  <script>
+    // Generate temporary username
+    const username = "User" + Math.floor(Math.random() * 10000);
+    const chatBox = document.getElementById("chat-box");
+    const input = document.getElementById("msg");
+    const sendBtn = document.getElementById("send");
+
+    // Connect to a public websocket server
+    const socket = new WebSocket("wss://ws.postman-echo.com/raw");
+
+    socket.onopen = () => {
+      const joinMsg = { user: "System", text: `${username} joined the chat.` };
+      socket.send(JSON.stringify(joinMsg));
+    };
+
+    socket.onmessage = event => {
+      try {
+        const data = JSON.parse(event.data);
+        displayMessage(data.user, data.text);
+      } catch {
+        // Some echo servers return plain text
+        displayMessage("Someone", event.data);
+      }
+    };
+
+    sendBtn.onclick = sendMessage;
+    input.addEventListener("keypress", e => { if (e.key === "Enter") sendMessage(); });
+
+    function sendMessage() {
+      const text = input.value.trim();
+      if (!text) return;
+      const message = { user: username, text };
+      socket.send(JSON.stringify(message));
+      input.value = "";
+    }
+
+    function displayMessage(user, text) {
+      const div = document.createElement("div");
+      div.classList.add("msg");
+      div.innerHTML = `<span class="username">${user}:</span> ${text}`;
+      chatBox.appendChild(div);
+      chatBox.scrollTop = chatBox.scrollHeight;
+    }
+  </script>
+</body>
+</html>
