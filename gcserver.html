@@ -3,31 +3,32 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Global Chat</title>
+  <title>Universal Live Chat</title>
   <style>
     body {
-      background: #0e0e10;
-      color: white;
+      background: #0b0b0d;
+      color: #fff;
       font-family: Arial, sans-serif;
       display: flex;
       flex-direction: column;
       align-items: center;
+      justify-content: flex-start;
       height: 100vh;
       margin: 0;
     }
-    h1 { color: #ff3b3b; margin: 10px 0; }
+    h1 { color: #ff3333; margin: 10px 0; }
     #chat-box {
       flex: 1;
       width: 90%;
       max-width: 700px;
-      background: #1a1a1d;
+      background: #16161a;
       border-radius: 8px;
       padding: 10px;
       overflow-y: auto;
       box-shadow: 0 0 10px #000;
     }
     .msg { margin: 5px 0; }
-    .username { color: #ff3b3b; font-weight: bold; }
+    .username { color: #ff3333; font-weight: bold; }
     #input-area {
       display: flex;
       width: 90%;
@@ -43,7 +44,7 @@
       font-size: 16px;
     }
     #send {
-      background: #ff3b3b;
+      background: #ff3333;
       border: none;
       color: white;
       font-size: 16px;
@@ -54,7 +55,7 @@
   </style>
 </head>
 <body>
-  <h1>🌐 Global Chat</h1>
+  <h1>🌐 Universal Chat</h1>
   <div id="chat-box"></div>
   <div id="input-area">
     <input id="msg" placeholder="Type your message..." />
@@ -62,18 +63,17 @@
   </div>
 
   <script>
-    // Generate temporary username
     const username = "User" + Math.floor(Math.random() * 10000);
     const chatBox = document.getElementById("chat-box");
     const input = document.getElementById("msg");
     const sendBtn = document.getElementById("send");
 
-    // Connect to a public websocket server
-    const socket = new WebSocket("wss://ws.postman-echo.com/raw");
+    // ✅ Shared public websocket (works globally)
+    const socket = new WebSocket("wss://chat.openai-vibe.repl.co");
 
     socket.onopen = () => {
-      const joinMsg = { user: "System", text: `${username} joined the chat.` };
-      socket.send(JSON.stringify(joinMsg));
+      displayMessage("System", `✅ ${username} joined the chat`);
+      socket.send(JSON.stringify({ user: "System", text: `${username} joined the chat` }));
     };
 
     socket.onmessage = event => {
@@ -81,8 +81,7 @@
         const data = JSON.parse(event.data);
         displayMessage(data.user, data.text);
       } catch {
-        // Some echo servers return plain text
-        displayMessage("Someone", event.data);
+        console.warn("Invalid message", event.data);
       }
     };
 
@@ -92,8 +91,8 @@
     function sendMessage() {
       const text = input.value.trim();
       if (!text) return;
-      const message = { user: username, text };
-      socket.send(JSON.stringify(message));
+      const msg = { user: username, text };
+      socket.send(JSON.stringify(msg));
       input.value = "";
     }
 
