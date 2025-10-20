@@ -36,15 +36,16 @@
     <button id="send">Send</button>
   </div>
 
-  <!-- Firebase scripts -->
-  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js"></script>
+  <!-- Firebase (v10+) -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+    import { getDatabase, ref, push, onChildAdded } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 
-  <script>
-    // 🔧 Replace with your config from Firebase Console
-   const firebaseConfig = {
+    // 🔧 Replace with your Firebase config
+const firebaseConfig = {
   apiKey: "AIzaSyDTVB9VEH2yEog8FpJg9FUw9Dw0ZVdFzl8",
   authDomain: "gc-server-194dc.firebaseapp.com",
+  databaseURL: "https://gc-server-194dc-default-rtdb.firebaseio.com",
   projectId: "gc-server-194dc",
   storageBucket: "gc-server-194dc.firebasestorage.app",
   messagingSenderId: "118074020779",
@@ -52,9 +53,9 @@
   measurementId: "G-EH22T2ZGY0"
 };
 
-    // Initialize Firebase
-    const app = firebase.initializeApp(firebaseConfig);
-    const db = firebase.database();
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+    const messagesRef = ref(db, "messages");
 
     const username = "User" + Math.floor(Math.random() * 10000);
     const chatBox = document.getElementById("chat-box");
@@ -67,13 +68,11 @@
     function sendMessage() {
       const text = input.value.trim();
       if (!text) return;
-      const msg = { user: username, text, time: Date.now() };
-      db.ref("messages").push(msg);
+      push(messagesRef, { user: username, text: text, time: Date.now() });
       input.value = "";
     }
 
-    // Listen for new messages
-    db.ref("messages").on("child_added", snapshot => {
+    onChildAdded(messagesRef, snapshot => {
       const data = snapshot.val();
       displayMessage(data.user, data.text);
     });
