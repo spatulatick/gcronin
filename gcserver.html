@@ -2,88 +2,64 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Universal Live Chat</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+  <title>Global Firebase Chat</title>
   <style>
     body {
-      background: #0b0b0d;
-      color: #fff;
-      font-family: Arial, sans-serif;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: flex-start;
-      height: 100vh;
-      margin: 0;
+      background:#0b0b0d; color:white; font-family:Arial, sans-serif;
+      display:flex; flex-direction:column; align-items:center; height:100vh; margin:0;
     }
-    h1 { color: #ff3333; margin: 10px 0; }
+    h1 { color:#ff3333; margin:10px 0; }
     #chat-box {
-      flex: 1;
-      width: 90%;
-      max-width: 700px;
-      background: #16161a;
-      border-radius: 8px;
-      padding: 10px;
-      overflow-y: auto;
-      box-shadow: 0 0 10px #000;
+      flex:1; width:90%; max-width:700px; background:#16161a;
+      border-radius:8px; padding:10px; overflow-y:auto; box-shadow:0 0 10px #000;
     }
-    .msg { margin: 5px 0; }
-    .username { color: #ff3333; font-weight: bold; }
+    .msg { margin:5px 0; }
+    .username { color:#ff3333; font-weight:bold; }
     #input-area {
-      display: flex;
-      width: 90%;
-      max-width: 700px;
-      margin-bottom: 10px;
+      display:flex; width:90%; max-width:700px; margin-bottom:10px;
     }
     #msg {
-      flex: 1;
-      padding: 10px;
-      border: none;
-      border-radius: 6px 0 0 6px;
-      outline: none;
-      font-size: 16px;
+      flex:1; padding:10px; border:none; border-radius:6px 0 0 6px; outline:none; font-size:16px;
     }
     #send {
-      background: #ff3333;
-      border: none;
-      color: white;
-      font-size: 16px;
-      padding: 10px 20px;
-      border-radius: 0 6px 6px 0;
-      cursor: pointer;
+      background:#ff3333; border:none; color:white; font-size:16px; padding:10px 20px;
+      border-radius:0 6px 6px 0; cursor:pointer;
     }
   </style>
 </head>
 <body>
-  <h1>🌐 Universal Chat</h1>
+  <h1>🌐 Firebase Global Chat</h1>
   <div id="chat-box"></div>
   <div id="input-area">
-    <input id="msg" placeholder="Type your message..." />
+    <input id="msg" placeholder="Type a message..." />
     <button id="send">Send</button>
   </div>
 
+  <!-- Firebase scripts -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js"></script>
+
   <script>
+    // 🔧 Replace with your config from Firebase Console
+   const firebaseConfig = {
+  apiKey: "AIzaSyDTVB9VEH2yEog8FpJg9FUw9Dw0ZVdFzl8",
+  authDomain: "gc-server-194dc.firebaseapp.com",
+  projectId: "gc-server-194dc",
+  storageBucket: "gc-server-194dc.firebasestorage.app",
+  messagingSenderId: "118074020779",
+  appId: "1:118074020779:web:0a540f7019d457217178ee",
+  measurementId: "G-EH22T2ZGY0"
+};
+
+    // Initialize Firebase
+    const app = firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+
     const username = "User" + Math.floor(Math.random() * 10000);
     const chatBox = document.getElementById("chat-box");
     const input = document.getElementById("msg");
     const sendBtn = document.getElementById("send");
-
-    // ✅ Shared public websocket (works globally)
-    const socket = new WebSocket("wss://chat.openai-vibe.repl.co");
-
-    socket.onopen = () => {
-      displayMessage("System", `✅ ${username} joined the chat`);
-      socket.send(JSON.stringify({ user: "System", text: `${username} joined the chat` }));
-    };
-
-    socket.onmessage = event => {
-      try {
-        const data = JSON.parse(event.data);
-        displayMessage(data.user, data.text);
-      } catch {
-        console.warn("Invalid message", event.data);
-      }
-    };
 
     sendBtn.onclick = sendMessage;
     input.addEventListener("keypress", e => { if (e.key === "Enter") sendMessage(); });
@@ -91,10 +67,16 @@
     function sendMessage() {
       const text = input.value.trim();
       if (!text) return;
-      const msg = { user: username, text };
-      socket.send(JSON.stringify(msg));
+      const msg = { user: username, text, time: Date.now() };
+      db.ref("messages").push(msg);
       input.value = "";
     }
+
+    // Listen for new messages
+    db.ref("messages").on("child_added", snapshot => {
+      const data = snapshot.val();
+      displayMessage(data.user, data.text);
+    });
 
     function displayMessage(user, text) {
       const div = document.createElement("div");
